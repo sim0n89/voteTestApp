@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # Сервис приложения (Laravel)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel_likes_app
+    # Привязываем порт 80 контейнера к 8080 на хосте, чтобы можно было открыть http://localhost:8080
+    ports:
+      - "8080:80"
+    volumes:
+      # Монтируем текущую папку (где находится проект) в /var/www/html контейнера (если хотим "горячую" разработку)
+      - .:/var/www/html
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - .env.docker  # Можно хранить переменные окружения, например, DB_CONNECTION, REDIS_HOST и пр.
+
+  # MySQL (либо MariaDB)
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    volumes:
+      - db_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: laravel_db
+      MYSQL_USER: laravel_user
+      MYSQL_PASSWORD: secretpass
+    ports:
+      - "3307:3306"  # Можно пробросить наружу, если нужно
+
+  # Redis
+  redis:
+    image: redis:latest
+    container_name: redis_likes
+    command: redis-server --requirepass "redispass"  # Если хотите задать пароль, иначе можно убрать
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+# Общие тома
+volumes:
+  db_data:
+  redis_data:
